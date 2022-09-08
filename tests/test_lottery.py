@@ -1,7 +1,11 @@
 from brownie import Lottery, accounts, config, network, exceptions
 from web3 import Web3
 from scripts.deploy_lottery import deploy_lottery
-from scripts.helpful_scripts import LOCAL_BLOCKCHAIN_ENVIRONMENTS, get_account
+from scripts.helpful_scripts import (
+    LOCAL_BLOCKCHAIN_ENVIRONMENTS,
+    fund_with_link,
+    get_account,
+)
 import pytest
 
 
@@ -29,3 +33,16 @@ def test_cant_enter_unless_started():
     lottery = deploy_lottery()
     with pytest.raises(exceptions.VirtualMachineError):
         lottery.enter({"from": get_account(), "value": lottery.getEntranceFee()})
+
+
+def test_can_start_and_enter_lottery():
+    # Arrange
+    if network.show_active() not in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
+        pytest.skip()
+    account = get_account()
+    lottery = deploy_lottery()
+    lottery.startLottery()
+    # Act
+    lottery.enter({"from": account, "value": lottery.getEntranceFee()})
+    # Assert
+    assert lottery.players(0) == account
